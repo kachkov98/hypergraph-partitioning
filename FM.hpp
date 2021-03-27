@@ -1,6 +1,7 @@
 #ifndef FM_HPP
 #define FM_HPP
 
+#include <array>
 #include <cassert>
 #include <climits>
 #include <cstdint>
