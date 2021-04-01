@@ -28,9 +28,9 @@ jobs:
       - name: CMake configure
         run: cmake  -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }}
       - name: CMake build
-        run: cmake --build build
+        run: cmake --build build --target install --config Release
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
-          path: ./build/${{ matrix.config.artifact }}
+          path: ./bin/${{ matrix.config.artifact }}
           name: ${{ matrix.config.artifact }}
