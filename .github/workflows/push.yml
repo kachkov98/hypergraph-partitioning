@@ -12,12 +12,12 @@ jobs:
         config:
         - {
             name: "Windows Latest - MSVC", os: windows-latest,
-            artifact: "partitioner.exe",
+            artifact: "partitioner.exe", artifact_path: "Release/partitioner.exe",
             cxx: "cl",
           }
         - {
             name: "Ubuntu Latest - GCC", os: ubuntu-latest,
-            artifact: "partitioner",
+            artifact: "partitioner", artifact_path: "partitioner",
             cxx: "g++-10"
           }
 
@@ -27,11 +27,11 @@ jobs:
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
       - name: CMake configure
-        run: cmake  -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }} -DCMAKE_INSTALL_PREFIX=./install
+        run: cmake  -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }}
       - name: CMake build
-        run: cmake --build build --target install --config Release
+        run: cmake --build build --config Release
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
-          path: ./install/bin/${{ matrix.config.artifact }}
+          path: ./build/${{ matrix.config.artifact_path }}
           name: ${{ matrix.config.artifact }}
