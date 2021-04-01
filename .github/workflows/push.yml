@@ -11,15 +11,13 @@ jobs:
       matrix:
         config:
         - {
-            name: "Windows Latest - MSVC",
-            artifact: "partitioner.exe",
-            os: windows-latest,
+            name: "Windows Latest - MSVC", os: windows-latest,
+            artifact: "partitioner-windows.exe", artifact-path: "Release/partitioner.exe",
             cxx: "cl",
           }
         - {
-            name: "Ubuntu Latest - GCC",
-            artifact: "partitioner",
-            os: ubuntu-latest,
+            name: "Ubuntu Latest - GCC", os: ubuntu-latest,
+            artifact: "partitioner-linux", artifact-path: "partitioner",
             cxx: "g++-10"
           }
 
@@ -32,8 +30,5 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
-          if: runner.os == 'Windows'
-          path: ./build/Release/${{ matrix.config.artifact }}
-          if: runner.os == 'Linux'
-          path: ./build/${{ matrix.config.artifact }}
+          path: ./build/${{ matrix.config.artifact-path }}
           name: {{ matrix.config.artifact }}
