@@ -26,11 +26,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: CMake configure
-        run: cmake  -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }} -DCMAKE_INSTALL_PREFIX=./install
+        run: cmake  -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }}
       - name: CMake build
-        run: cmake --build build --target install --config Release
+        run: cmake --build build --config Release
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
-          path: ./install/${{ matrix.config.artifact }}
+          path: ./BUILD/${{ matrix.config.artifact }}
           name: ${{ matrix.config.artifact }}
