@@ -1,0 +1,36 @@
+name: Build
+
+on: [push]
+
+jobs:
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    stategy:
+    fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Windows Latest - MSVC",
+            artifact: "partioner.exe",
+            os: windows-latest,
+            cxx: "cl",
+          }
+        - {
+            name: "Ubuntu Latest - GCC",
+            artifact: "partioner",
+            os: ubuntu-latest,
+            cxx: "g++-10"
+          }
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: CMake configure
+        run: cmake  -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }}
+      - name: CMake build
+        run: cmake --build build
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          path: ./build/${{ matrix.config.artifact }}
+          name: ${{ matrix.config.artifact }}
