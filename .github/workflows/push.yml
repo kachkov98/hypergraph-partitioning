@@ -23,6 +23,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - name: Set Windows environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
       - name: CMake configure
         run: cmake  -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }} -DCMAKE_INSTALL_PREFIX=./install
       - name: CMake build
@@ -30,5 +33,5 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
-          path: ./install/${{ matrix.config.artifact }}
+          path: ./install/bin/${{ matrix.config.artifact }}
           name: ${{ matrix.config.artifact }}
