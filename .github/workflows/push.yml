@@ -12,13 +12,13 @@ jobs:
         config:
         - {
             name: "Windows Latest - MSVC",
-            artifact: "Release/partioner.exe",
+            artifact: "Release/partitioner.exe",
             os: windows-latest,
             cxx: "cl",
           }
         - {
             name: "Ubuntu Latest - GCC",
-            artifact: "partioner",
+            artifact: "partitioner",
             os: ubuntu-latest,
             cxx: "g++-10"
           }
@@ -33,4 +33,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           path: ./build/${{ matrix.config.artifact }}
-          name: ${{ matrix.config.artifact }}
+          name: partitioner
