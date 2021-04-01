@@ -12,7 +12,7 @@ jobs:
         config:
         - {
             name: "Windows Latest - MSVC",
-            artifact: "partioner.exe",
+            artifact: "Release/partioner.exe",
             os: windows-latest,
             cxx: "cl",
           }
@@ -32,5 +32,5 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
-          path: ./BUILD/${{ matrix.config.artifact }}
+          path: ./build/${{ matrix.config.artifact }}
           name: ${{ matrix.config.artifact }}
