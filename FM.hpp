@@ -24,7 +24,7 @@ private:
   std::vector<Net> nets_;
 };
 
-using PartId = uint8_t;
+using PartId = bool;
 
 struct Move {
   unsigned cell;
@@ -42,6 +42,9 @@ public:
   unsigned getPartitionCost(const Hypergraph &hypergraph) const;
 
 private:
+  // For 2-way partitioning this is a vector of bools. However, using it looks reasonable because
+  // perf measurements show that lots of time is spending on copying it in FM pass, so minimizing
+  // its size brings some improvements.
   std::vector<PartId> partitionment_;
 };
 
@@ -49,14 +52,13 @@ static PartId OppositePart(PartId id) { return !id; }
 
 class GainBuckets {
 public:
-  using Bucket = std::list<unsigned>;
+  using Bucket = std::vector<unsigned>;
   using GainedCell = std::pair<unsigned, int>;
   GainBuckets(unsigned max_gain)
       : container_(max_gain * 2 + 1), max_gain_(max_gain), num_elems_(0), best_gain_(INT_MIN) {}
 
-  Bucket::const_iterator addCell(int gain, unsigned cell);
-  void delCell(int gain, Bucket::const_iterator iter);
-  Bucket::const_iterator moveCell(int old_gain, Bucket::const_iterator old_iter, int new_gain);
+  size_t addCell(int gain, unsigned cell);
+  unsigned delCell(int gain, size_t iter);
   GainedCell getMaxGainedCell() const;
   unsigned getNumElems() const { return num_elems_; }
 
@@ -85,7 +87,7 @@ public:
 
 private:
   struct CellState {
-    GainBuckets::Bucket::const_iterator iter;
+    size_t iter;
     int gain;
     bool locked;
   };

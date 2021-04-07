@@ -38,17 +38,20 @@ unsigned Partitionment::getPartitionCost(const Hypergraph &hypergraph) const {
   return cost;
 }
 
-GainBuckets::Bucket::const_iterator GainBuckets::addCell(int gain, unsigned cell) {
+size_t GainBuckets::addCell(int gain, unsigned cell) {
   ++num_elems_;
   if (gain > best_gain_)
     best_gain_ = gain;
-  (*this)[gain].push_front(cell);
-  return (*this)[gain].cbegin();
+  (*this)[gain].push_back(cell);
+  return (*this)[gain].size() - 1;
 }
 
-void GainBuckets::delCell(int gain, GainBuckets::Bucket::const_iterator iter) {
+unsigned GainBuckets::delCell(int gain, size_t iter) {
   --num_elems_;
-  (*this)[gain].erase(iter);
+  unsigned cell = UINT_MAX;
+  if (iter != (*this)[gain].size() - 1)
+    cell = (*this)[gain][iter] = (*this)[gain].back();
+  (*this)[gain].pop_back();
   if (best_gain_ == gain)
     while ((*this)[best_gain_].empty()) {
       if (best_gain_ == -(int)max_gain_) {
@@ -57,23 +60,12 @@ void GainBuckets::delCell(int gain, GainBuckets::Bucket::const_iterator iter) {
       }
       --best_gain_;
     }
-}
-
-GainBuckets::Bucket::const_iterator
-GainBuckets::moveCell(int old_gain, Bucket::const_iterator old_iter, int new_gain) {
-  auto &old_bucket = (*this)[old_gain], &new_bucket = (*this)[new_gain];
-  new_bucket.splice(new_bucket.cbegin(), old_bucket, old_iter);
-  if (new_gain > best_gain_)
-    best_gain_ = new_gain;
-  else if (old_gain == best_gain_ && new_gain < old_gain)
-    while ((*this)[best_gain_].empty())
-      --best_gain_;
-  return new_bucket.cbegin();
+  return cell;
 }
 
 GainBuckets::GainedCell GainBuckets::getMaxGainedCell() const {
   assert(best_gain_ != INT_MIN);
-  return GainedCell{(*this)[best_gain_].front(), best_gain_};
+  return GainedCell{(*this)[best_gain_].back(), best_gain_};
 }
 
 GainContainer::GainContainer(const Hypergraph &hypergraph, const Partitionment &partitionment) {
@@ -104,10 +96,7 @@ GainContainer::GainContainer(const Hypergraph &hypergraph, const Partitionment &
 };
 
 GainContainer::GainedMove GainContainer::getBestMove() const {
-  PartId biggest_part = 0;
-  for (PartId part = 1; part < 2; ++part)
-    if (buckets_[part].getNumElems() > buckets_[biggest_part].getNumElems())
-      biggest_part = part;
+  PartId biggest_part = buckets_[1].getNumElems() > buckets_[0].getNumElems() ? 1 : 0;
   auto [cell, gain] = buckets_[biggest_part].getMaxGainedCell();
   return GainedMove{{cell, biggest_part, OppositePart(biggest_part)}, gain};
 }
@@ -115,7 +104,8 @@ GainContainer::GainedMove GainContainer::getBestMove() const {
 void GainContainer::update(const Hypergraph &hypergraph, const Partitionment &partitionment,
                            Move move) {
   auto &cell_state = cell_states_[move.cell];
-  buckets_[move.src].delCell(cell_state.gain, cell_state.iter);
+  if (auto cell = buckets_[move.src].delCell(cell_state.gain, cell_state.iter); cell != UINT_MAX)
+    cell_states_[cell].iter = cell_state.iter;
   cell_state.locked = true;
   for (unsigned net : hypergraph.getCells()[move.cell]) {
     // updates before move
@@ -150,9 +140,11 @@ void GainContainer::updateGain(unsigned cell, PartId part, int diff) {
   auto &cell_state = cell_states_[cell];
   if (cell_state.locked)
     return;
-  cell_state.iter =
-      buckets_[part].moveCell(cell_state.gain, cell_state.iter, cell_state.gain + diff);
+  if (auto moved_cell = buckets_[part].delCell(cell_state.gain, cell_state.iter);
+      moved_cell != UINT_MAX)
+    cell_states_[moved_cell].iter = cell_state.iter;
   cell_state.gain += diff;
+  cell_state.iter = buckets_[part].addCell(cell_state.gain, cell);
 }
 
 unsigned FM_pass(const Hypergraph &hypergraph, Partitionment &partitionment) {
