@@ -8,13 +8,17 @@
 #include <vector>
 
 int main(int argc, char *argv[]) {
-  if (argc != 2) {
-    std::cout << "Usage: ./partioner [path to *.hgr file]" << std::endl;
+  if (argc != 2 && argc != 3) {
+    std::cout << "Usage: ./partioner [path to *.hgr file] [optional max difference]" << std::endl;
     return 1;
   }
   std::filesystem::path input_path = argv[1],
                         output_path = std::filesystem::current_path() /
                                       input_path.filename().replace_extension(".part.2");
+  unsigned max_diff = 1;
+  if (argc == 3)
+    if (unsigned n = std::stoul(argv[2]))
+      max_diff = n;
   // Load hypergraph
   std::ifstream input(input_path.c_str());
   if (!input.is_open()) {
@@ -39,7 +43,7 @@ int main(int argc, char *argv[]) {
   Partitionment partitionment(num_cells);
   unsigned cost = partitionment.getPartitionCost(hypergraph), pass_num = 0;
   std::cout << "Initial cut cost: " << cost << std::endl;
-  while (auto cost_reduction = FM_pass(hypergraph, partitionment)) {
+  while (auto cost_reduction = FM_pass(hypergraph, partitionment, max_diff)) {
     cost -= cost_reduction;
     ++pass_num;
     std::cout << "Cut cost after pass #" << std::setw(2) << pass_num << ": " << std::setw(5) << cost

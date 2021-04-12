@@ -103,13 +103,20 @@ GainContainer::GainContainer(const Hypergraph &hypergraph, const Partitionment &
   }
 };
 
-GainContainer::GainedMove GainContainer::getBestMove() const {
-  PartId biggest_part = 0;
-  for (PartId part = 1; part < 2; ++part)
-    if (buckets_[part].getNumElems() > buckets_[biggest_part].getNumElems())
-      biggest_part = part;
-  auto [cell, gain] = buckets_[biggest_part].getMaxGainedCell();
-  return GainedMove{{cell, biggest_part, OppositePart(biggest_part)}, gain};
+GainContainer::GainedMove GainContainer::getBestMove(unsigned max_diff) const {
+  PartId from_part;
+  int FstPartElems = buckets_[0].getNumElems(),
+      SndPartElems = buckets_[1].getNumElems();
+  if (std::abs(FstPartElems - SndPartElems) < max_diff)
+    from_part = buckets_[0].getMaxGainedCell().second >
+                buckets_[1].getMaxGainedCell().second ?
+                0 : 1;
+  else if (FstPartElems > SndPartElems)
+    from_part = 0;
+  else if (FstPartElems < SndPartElems)
+    from_part = 1;
+  auto [cell, gain] = buckets_[from_part].getMaxGainedCell();
+  return GainedMove{{cell, from_part, OppositePart(from_part)}, gain};
 }
 
 void GainContainer::update(const Hypergraph &hypergraph, const Partitionment &partitionment,
@@ -155,13 +162,13 @@ void GainContainer::updateGain(unsigned cell, PartId part, int diff) {
   cell_state.gain += diff;
 }
 
-unsigned FM_pass(const Hypergraph &hypergraph, Partitionment &partitionment) {
+unsigned FM_pass(const Hypergraph &hypergraph, Partitionment &partitionment, unsigned max_diff) {
   unsigned best_cost_reduction = 0;
   Partitionment best_partitionment(partitionment);
   GainContainer gain_container(hypergraph, partitionment);
   int cur_cost_reduction = 0;
   for (unsigned i = 0; i < hypergraph.getCells().size(); ++i) {
-    auto [move, gain] = gain_container.getBestMove();
+    auto [move, gain] = gain_container.getBestMove(max_diff);
     gain_container.update(hypergraph, partitionment, move);
     partitionment.doMove(move);
     cur_cost_reduction += gain;

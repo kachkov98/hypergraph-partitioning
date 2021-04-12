@@ -24,7 +24,7 @@ private:
   std::vector<Net> nets_;
 };
 
-using PartId = uint8_t;
+using PartId = bool;
 
 struct Move {
   unsigned cell;
@@ -42,6 +42,9 @@ public:
   unsigned getPartitionCost(const Hypergraph &hypergraph) const;
 
 private:
+  // For 2-way partitioning this is a vector of bools. However, using it looks reasonable because
+  // perf measurements show that lots of time is spending on copying it in FM pass, so minimizing
+  // its size brings some improvements.
   std::vector<PartId> partitionment_;
 };
 
@@ -80,7 +83,7 @@ class GainContainer {
 public:
   using GainedMove = std::pair<Move, int>; // move and its gain
   GainContainer(const Hypergraph &hypergraph, const Partitionment &partitionment);
-  GainedMove getBestMove() const;
+  GainedMove getBestMove(unsigned max_diff) const;
   void update(const Hypergraph &hypergraph, const Partitionment &partitionment, Move move);
 
 private:
@@ -97,6 +100,6 @@ private:
   void updateGain(unsigned cell, PartId part, int diff);
 };
 
-unsigned FM_pass(const Hypergraph &hypergraph, Partitionment &partitionment);
+unsigned FM_pass(const Hypergraph &hypergraph, Partitionment &partitionment, unsigned max_diff);
 
 #endif
